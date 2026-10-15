@@ -32,7 +32,7 @@ GapDetect does it in one click and also reads back the label length and gap size
 - **DPI aware** — 203 / 300 / 600 DPI for correct dot → mm conversion.
 - **Remembers** your last printer, DPI and language.
 - **Light / dark mode** follows your Windows theme.
-- **English & Turkish** UI.
+- **Clean, distraction-free English UI** with modern frameless design.
 
 ## Download
 
