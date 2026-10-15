@@ -10,20 +10,6 @@ from PyQt5.QtGui import QFont, QColor
 from printer_comms import PrinterInterface
 import icons
 
-
-def _detect_system_dark_mode():
-    try:
-        import winreg
-        key = winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER,
-            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-        )
-        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-        return value == 0
-    except Exception:
-        return False
-
-
 LIGHT_PALETTE = {
     "bg_window": "#f4f6fb",
     "bg_panel": "#ffffff",
@@ -55,9 +41,6 @@ DARK_PALETTE = {
     "danger": "#f28b82",
     "danger_container": "#4c2523",
 }
-
-IS_DARK = _detect_system_dark_mode()
-PALETTE = DARK_PALETTE if IS_DARK else LIGHT_PALETTE
 
 
 def _shade(hex_color, amount):
@@ -155,16 +138,16 @@ def build_stylesheet(c):
         QPushButton#IconBtn:hover {{ background-color: {c['bg_input']}; }}
         QPushButton#IconBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
 
-        /* Exact Windows 11 Titlebar Button Styling */
-        QPushButton#WinMinBtn {{
+        /* Solid Windows-style titlebar buttons */
+        QPushButton#WinMinBtn, QPushButton#WinThemeBtn {{
             background-color: transparent;
             border-radius: 0px;
         }}
-        QPushButton#WinMinBtn:hover {{
-            background-color: {("rgba(255, 255, 255, 0.08)" if IS_DARK else "rgba(0, 0, 0, 0.06)")};
+        QPushButton#WinMinBtn:hover, QPushButton#WinThemeBtn:hover {{
+            background-color: {c['bg_input']};
         }}
-        QPushButton#WinMinBtn:pressed {{
-            background-color: {("rgba(255, 255, 255, 0.15)" if IS_DARK else "rgba(0, 0, 0, 0.12)")};
+        QPushButton#WinMinBtn:pressed, QPushButton#WinThemeBtn:pressed {{
+            background-color: {c['bg_input_hover']};
         }}
 
         QPushButton#WinCloseBtn {{
@@ -174,12 +157,8 @@ def build_stylesheet(c):
             border-bottom-right-radius: 0px;
             border-top-right-radius: 18px;
         }}
-        QPushButton#WinCloseBtn:hover {{
-            background-color: #e81123;
-        }}
-        QPushButton#WinCloseBtn:pressed {{
-            background-color: #c4101f;
-        }}
+        QPushButton#WinCloseBtn:hover {{ background-color: #e81123; }}
+        QPushButton#WinCloseBtn:pressed {{ background-color: #c4101f; }}
 
         QPushButton#BtnPrimary {{
             background-color: {c['accent']};
@@ -291,12 +270,10 @@ def _add_elevation(widget, blur=32, alpha=45, y_offset=6):
     widget.setGraphicsEffect(shadow)
 
 
-# ═══════════════════════════════════════════════════════════════
-# CUSTOM FRAMELESS HELP DIALOG (No Windows Title Bar, Large Text)
-# ═══════════════════════════════════════════════════════════════
 class DpiHelpDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, current_palette, parent=None):
         super().__init__(parent)
+        self.palette = current_palette
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setModal(True)
@@ -306,6 +283,7 @@ class DpiHelpDialog(QDialog):
 
         shell = DraggableArea(self)
         shell.setObjectName("DialogShell")
+        shell.setStyleSheet(f"background-color: {self.palette['bg_window']}; border-radius: 20px;")
         _add_elevation(shell, blur=36, alpha=60, y_offset=8)
         outer_layout.addWidget(shell)
 
@@ -316,17 +294,17 @@ class DpiHelpDialog(QDialog):
         # Dialog Header
         top_row = QHBoxLayout()
         icon_lbl = QLabel()
-        icon_lbl.setPixmap(icons.pixmap('fa5s.question-circle', PALETTE['accent'], 24))
+        icon_lbl.setPixmap(icons.pixmap('fa5s.question-circle', self.palette['accent'], 24))
         top_row.addWidget(icon_lbl)
 
         title_lbl = QLabel("Finding Your Printer's DPI")
-        title_lbl.setStyleSheet(f"font-size: 19px; font-weight: 700; color: {PALETTE['fg_title']};")
+        title_lbl.setStyleSheet(f"font-size: 19px; font-weight: 700; color: {self.palette['fg_title']};")
         top_row.addWidget(title_lbl)
         top_row.addStretch(1)
 
         close_btn = QPushButton()
         close_btn.setObjectName("IconBtn")
-        close_btn.setIcon(icons.icon('fa5s.times', PALETTE['fg_secondary']))
+        close_btn.setIcon(icons.icon('fa5s.times', self.palette['fg_secondary']))
         close_btn.setIconSize(QSize(14, 14))
         close_btn.setFixedSize(32, 32)
         close_btn.setCursor(Qt.PointingHandCursor)
@@ -334,34 +312,33 @@ class DpiHelpDialog(QDialog):
         top_row.addWidget(close_btn)
         layout.addLayout(top_row)
 
-        # Content Card with large, easily readable text
+        # Content Card with large text
         content_box = QFrame()
-        content_box.setObjectName("Panel")
-        content_box.setStyleSheet(f"background-color: {PALETTE['bg_panel']}; border-radius: 12px; padding: 10px;")
+        content_box.setStyleSheet(f"background-color: {self.palette['bg_panel']}; border-radius: 14px; padding: 12px;")
         box_layout = QVBoxLayout(content_box)
         box_layout.setSpacing(12)
 
         desc_lbl = QLabel("You can easily check your label printer's resolution:")
-        desc_lbl.setStyleSheet(f"font-size: 15px; color: {PALETTE['fg_primary']}; font-weight: 500;")
+        desc_lbl.setStyleSheet(f"font-size: 15px; color: {self.palette['fg_primary']}; font-weight: 500;")
         box_layout.addWidget(desc_lbl)
 
         item1 = QLabel("• <b>Device Label:</b> Usually printed on the bottom or back label of the printer.")
-        item1.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item1.setStyleSheet(f"font-size: 14px; color: {self.palette['fg_secondary']};")
         item1.setWordWrap(True)
         box_layout.addWidget(item1)
 
         item2 = QLabel("• <b>User Manual:</b> Listed under the technical specifications section.")
-        item2.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item2.setStyleSheet(f"font-size: 14px; color: {self.palette['fg_secondary']};")
         item2.setWordWrap(True)
         box_layout.addWidget(item2)
 
         item3 = QLabel("• <b>Online Search:</b> Search for <i>&quot;&lt;model&gt; dpi&quot;</i> (e.g. <i>Xprinter XP-DT325B dpi</i>).")
-        item3.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item3.setStyleSheet(f"font-size: 14px; color: {self.palette['fg_secondary']};")
         item3.setWordWrap(True)
         box_layout.addWidget(item3)
 
-        tip_lbl = QLabel("💡 <b>Rule of Thumb:</b> Most budget and standard thermal label printers are <b>203 DPI</b>. If unsure, select 203 DPI.")
-        tip_lbl.setStyleSheet(f"font-size: 14px; color: {PALETTE['accent']}; background-color: {PALETTE['accent_container']}; border-radius: 8px; padding: 10px;")
+        tip_lbl = QLabel("💡 <b>Rule of Thumb:</b> Most budget and standard thermal label printers are <b>203 DPI</b>. If unsure, start with 203 DPI.")
+        tip_lbl.setStyleSheet(f"font-size: 14px; color: {self.palette['accent']}; background-color: {self.palette['accent_container']}; border-radius: 8px; padding: 10px;")
         tip_lbl.setWordWrap(True)
         box_layout.addWidget(tip_lbl)
 
@@ -371,14 +348,13 @@ class DpiHelpDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
         got_it_btn = QPushButton("Got it")
-        got_it_btn.setObjectName("BtnPrimary")
-        got_it_btn.setFixedSize(110, 42)
+        got_it_btn.setStyleSheet(f"background-color: {self.palette['accent']}; color: {self.palette['bg_panel']}; font-size: 15px; font-weight: 600; border-radius: 20px; padding: 10px 24px;")
         got_it_btn.setCursor(Qt.PointingHandCursor)
         got_it_btn.clicked.connect(self.accept)
         btn_row.addWidget(got_it_btn)
         layout.addLayout(btn_row)
 
-        self.resize(440, 380)
+        self.resize(440, 390)
 
 
 class MainWindow(QMainWindow):
@@ -386,6 +362,16 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.settings = QSettings("StaticBeaver", "GapDetect")
+        
+        # Default to LIGHT theme as requested, unless user previously set a preference
+        saved_theme = self.settings.value("is_dark_mode", None)
+        if saved_theme is None:
+            self.is_dark_mode = False  # Default Light Mode
+        else:
+            self.is_dark_mode = str(saved_theme).lower() == 'true'
+
+        self.palette = DARK_PALETTE if self.is_dark_mode else LIGHT_PALETTE
+
         self.printer = PrinterInterface()
         self.worker = None
         self.is_connecting = False
@@ -405,16 +391,16 @@ class MainWindow(QMainWindow):
         outer_layout = QVBoxLayout(outer_widget)
         outer_layout.setContentsMargins(14, 14, 14, 14)
 
-        shell = DraggableArea(self)
-        shell.setObjectName("AppShell")
-        _add_elevation(shell, blur=32, alpha=45, y_offset=6)
-        outer_layout.addWidget(shell)
+        self.shell = DraggableArea(self)
+        self.shell.setObjectName("AppShell")
+        _add_elevation(self.shell, blur=32, alpha=45, y_offset=6)
+        outer_layout.addWidget(self.shell)
 
-        main_layout = QVBoxLayout(shell)
+        main_layout = QVBoxLayout(self.shell)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # --- Solid Clean Header (Original Style with no TR button) ---
+        # --- Header ---
         header = DraggableArea(self)
         header.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         header_layout = QHBoxLayout(header)
@@ -432,46 +418,40 @@ class MainWindow(QMainWindow):
 
         self.lbl_header_title = QLabel("GapDetect")
         self.lbl_header_title.setStyleSheet(
-            f"font-size: 18px; font-weight: 600; color: {PALETTE['fg_title']}; background: transparent;"
+            f"font-size: 18px; font-weight: 600; color: {self.palette['fg_title']}; background: transparent;"
         )
         header_left_layout.addWidget(self.lbl_header_title)
 
         header_layout.addWidget(header_left, 0, Qt.AlignVCenter)
         header_layout.addStretch(1)
 
-        # Full-height Windows style minimize & close buttons
+        # Sun / Moon theme toggle button
+        self.btn_theme = QPushButton()
+        self.btn_theme.setObjectName("WinThemeBtn")
+        self.btn_theme.setFixedSize(44, 44)
+        self.btn_theme.setCursor(Qt.PointingHandCursor)
+        self.btn_theme.clicked.connect(self.toggle_theme)
+
+        # Minimize & close buttons
         self.btn_minimize = QPushButton()
         self.btn_minimize.setObjectName("WinMinBtn")
-        self._icon_min_normal = icons.icon('fa5s.window-minimize', PALETTE['fg_secondary'])
-        self._icon_min_hover = icons.icon('fa5s.window-minimize', PALETTE['fg_primary'])
-        self.btn_minimize.setIcon(self._icon_min_normal)
-        self.btn_minimize.setIconSize(QSize(13, 13))
         self.btn_minimize.setFixedSize(44, 44)
         self.btn_minimize.setCursor(Qt.PointingHandCursor)
         self.btn_minimize.setToolTip("Minimize")
         self.btn_minimize.clicked.connect(self.showMinimized)
-        self.btn_minimize.enterEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_hover)
-        self.btn_minimize.leaveEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_normal)
 
         self.btn_close = QPushButton()
         self.btn_close.setObjectName("WinCloseBtn")
-        self._icon_close_normal = icons.icon('fa5s.times', PALETTE['fg_secondary'])
-        self._icon_close_hover = icons.icon('fa5s.times', '#ffffff')
-        self.btn_close.setIcon(self._icon_close_normal)
-        self.btn_close.setIconSize(QSize(14, 14))
         self.btn_close.setFixedSize(44, 44)
         self.btn_close.setCursor(Qt.PointingHandCursor)
         self.btn_close.setToolTip("Close")
         self.btn_close.clicked.connect(self.close)
 
-        # Exact Windows hover effect: switch icon to white on hover
-        self.btn_close.enterEvent = lambda e: self.btn_close.setIcon(self._icon_close_hover)
-        self.btn_close.leaveEvent = lambda e: self.btn_close.setIcon(self._icon_close_normal)
-
         win_btns = QWidget()
         win_btns_layout = QHBoxLayout(win_btns)
         win_btns_layout.setContentsMargins(0, 0, 0, 0)
         win_btns_layout.setSpacing(0)
+        win_btns_layout.addWidget(self.btn_theme)
         win_btns_layout.addWidget(self.btn_minimize)
         win_btns_layout.addWidget(self.btn_close)
         header_layout.addWidget(win_btns, 0, Qt.AlignVCenter)
@@ -501,7 +481,7 @@ class MainWindow(QMainWindow):
         self.combo_devices.setObjectName("DeviceCombo")
         self.combo_devices.currentIndexChanged.connect(self.on_device_selected)
 
-        self.btn_refresh = _make_icon_button('fa5s.sync-alt', PALETTE['fg_secondary'], size=34, icon_size=15)
+        self.btn_refresh = _make_icon_button('fa5s.sync-alt', self.palette['fg_secondary'], size=34, icon_size=15)
         self.btn_refresh.setToolTip("Refresh Devices")
         self.btn_refresh.clicked.connect(self.update_device_list)
 
@@ -528,7 +508,7 @@ class MainWindow(QMainWindow):
         self.combo_dpi.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_dpi.currentIndexChanged.connect(self.on_dpi_changed)
 
-        self.btn_dpi_help = _make_icon_button('fa5s.question-circle', PALETTE['fg_secondary'], size=34, icon_size=15)
+        self.btn_dpi_help = _make_icon_button('fa5s.question-circle', self.palette['fg_secondary'], size=34, icon_size=15)
         self.btn_dpi_help.setToolTip("How do I find my printer's DPI?")
         self.btn_dpi_help.clicked.connect(self.show_dpi_help)
 
@@ -552,7 +532,6 @@ class MainWindow(QMainWindow):
 
         self.btn_calibrate = QPushButton("Calibrate")
         self.btn_calibrate.setObjectName("BtnPrimary")
-        self.btn_calibrate.setIcon(icons.icon('fa5s.ruler-combined', PALETTE['bg_panel']))
         self.btn_calibrate.setMinimumHeight(56)
         self.btn_calibrate.clicked.connect(self.do_calibrate)
         self.btn_calibrate.setEnabled(False)
@@ -560,7 +539,6 @@ class MainWindow(QMainWindow):
 
         self.btn_send_cmd = QPushButton("Get Info")
         self.btn_send_cmd.setObjectName("BtnSecondary")
-        self.btn_send_cmd.setIcon(icons.icon('fa5s.download', PALETTE['on_accent_container']))
         self.btn_send_cmd.setMinimumHeight(56)
         self.btn_send_cmd.clicked.connect(self.send_and_read)
         self.btn_send_cmd.setEnabled(False)
@@ -581,10 +559,8 @@ class MainWindow(QMainWindow):
         length_tile_layout.setContentsMargins(18, 16, 18, 16)
         length_tile_layout.setSpacing(6)
         self.lbl_length_title = QLabel("Label Length")
-        self.lbl_length_title.setStyleSheet(f"color: {PALETTE['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
         self.lbl_length = QLabel("—")
         self.lbl_length.setWordWrap(True)
-        self.lbl_length.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {PALETTE['fg_primary']}; border: none;")
         length_tile_layout.addWidget(self.lbl_length_title)
         length_tile_layout.addWidget(self.lbl_length)
 
@@ -595,10 +571,8 @@ class MainWindow(QMainWindow):
         gap_tile_layout.setContentsMargins(18, 16, 18, 16)
         gap_tile_layout.setSpacing(6)
         self.lbl_gap_title = QLabel("Gap")
-        self.lbl_gap_title.setStyleSheet(f"color: {PALETTE['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
         self.lbl_gap = QLabel("—")
         self.lbl_gap.setWordWrap(True)
-        self.lbl_gap.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {PALETTE['fg_primary']}; border: none;")
         gap_tile_layout.addWidget(self.lbl_gap_title)
         gap_tile_layout.addWidget(self.lbl_gap)
 
@@ -611,16 +585,16 @@ class MainWindow(QMainWindow):
         self.lbl_footer = QLabel("Developed by StaticBeaver © 2026")
         self.lbl_footer.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.lbl_footer.setFont(QFont("Segoe UI", 9))
-        self.lbl_footer.setStyleSheet(f"color: {PALETTE['fg_secondary']};")
         footer_layout.addWidget(self.lbl_footer, stretch=1)
         content_layout.addLayout(footer_layout)
 
         # Size grip
-        self._shell = shell
-        self.size_grip = QSizeGrip(shell)
+        self.size_grip = QSizeGrip(self.shell)
         self.size_grip.setFixedSize(16, 16)
         self.size_grip.raise_()
 
+        # Apply initial theme icons and styling
+        self._apply_theme()
         self._set_status("waiting")
         self.update_device_list()
 
@@ -630,9 +604,64 @@ class MainWindow(QMainWindow):
         self._center_on_screen()
         self._position_size_grip()
 
+    def _apply_theme(self):
+        c = self.palette
+        QApplication.instance().setStyleSheet(build_stylesheet(c))
+
+        # Dynamic Sun / Moon Icon
+        if self.is_dark_mode:
+            # Currently Dark -> Show Sun to switch to Light
+            self.btn_theme.setIcon(icons.icon('fa5s.sun', '#f5a623'))
+            self.btn_theme.setIconSize(QSize(16, 16))
+            self.btn_theme.setToolTip("Switch to Light Mode")
+        else:
+            # Currently Light -> Show Moon to switch to Dark
+            self.btn_theme.setIcon(icons.icon('fa5s.moon', c['fg_secondary']))
+            self.btn_theme.setIconSize(QSize(15, 15))
+            self.btn_theme.setToolTip("Switch to Dark Mode")
+
+        # Update titlebar button icons and hover events
+        self._icon_min_normal = icons.icon('fa5s.window-minimize', c['fg_secondary'])
+        self._icon_min_hover = icons.icon('fa5s.window-minimize', c['fg_primary'])
+        self.btn_minimize.setIcon(self._icon_min_normal)
+        self.btn_minimize.setIconSize(QSize(13, 13))
+        self.btn_minimize.enterEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_hover)
+        self.btn_minimize.leaveEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_normal)
+
+        self._icon_close_normal = icons.icon('fa5s.times', c['fg_secondary'])
+        self._icon_close_hover = icons.icon('fa5s.times', '#ffffff')
+        self.btn_close.setIcon(self._icon_close_normal)
+        self.btn_close.setIconSize(QSize(14, 14))
+        self.btn_close.enterEvent = lambda e: self.btn_close.setIcon(self._icon_close_hover)
+        self.btn_close.leaveEvent = lambda e: self.btn_close.setIcon(self._icon_close_normal)
+
+        # Action buttons icons
+        self.btn_calibrate.setIcon(icons.icon('fa5s.ruler-combined', c['bg_panel']))
+        self.btn_send_cmd.setIcon(icons.icon('fa5s.download', c['on_accent_container']))
+
+        # Small UI icons
+        self.btn_refresh.setIcon(icons.icon('fa5s.sync-alt', c['fg_secondary']))
+        self.btn_dpi_help.setIcon(icons.icon('fa5s.question-circle', c['fg_secondary']))
+
+        # Typography colors
+        self.lbl_header_title.setStyleSheet(f"font-size: 18px; font-weight: 600; color: {c['fg_title']}; background: transparent;")
+        self.lbl_length_title.setStyleSheet(f"color: {c['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
+        self.lbl_length.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {c['fg_primary']}; border: none;")
+        self.lbl_gap_title.setStyleSheet(f"color: {c['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
+        self.lbl_gap.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {c['fg_primary']}; border: none;")
+        self.lbl_footer.setStyleSheet(f"color: {c['fg_secondary']};")
+
+        self._set_status(self.current_status_state)
+
+    def toggle_theme(self):
+        self.is_dark_mode = not self.is_dark_mode
+        self.settings.setValue("is_dark_mode", self.is_dark_mode)
+        self.palette = DARK_PALETTE if self.is_dark_mode else LIGHT_PALETTE
+        self._apply_theme()
+
     def _position_size_grip(self):
         g = self.size_grip
-        g.move(self._shell.width() - g.width() - 6, self._shell.height() - g.height() - 6)
+        g.move(self.shell.width() - g.width() - 6, self.shell.height() - g.height() - 6)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -648,13 +677,13 @@ class MainWindow(QMainWindow):
         self.settings.setValue("dpi", self.combo_dpi.currentData())
 
     def show_dpi_help(self):
-        dlg = DpiHelpDialog(self)
+        dlg = DpiHelpDialog(self.palette, self)
         dlg.exec_()
 
     def _set_status(self, state):
         self.current_status_state = state
         text, color_key = STATUS_STYLES.get(state, ("Waiting", None))
-        color = PALETTE[color_key] if color_key else PALETTE['fg_secondary']
+        color = self.palette[color_key] if color_key else self.palette['fg_secondary']
         bold = color_key is not None
         self.status_dot.setPixmap(icons.pixmap('fa5s.circle', color, 8))
         self.lbl_status.setText(text)
@@ -705,6 +734,7 @@ class MainWindow(QMainWindow):
         if not self.is_connecting:
             self.combo_devices.setEnabled(enabled)
             self.btn_refresh.setEnabled(enabled)
+            self.btn_theme.setEnabled(enabled)
             self.combo_dpi.setEnabled(enabled)
 
         if self.printer.connection:
@@ -843,8 +873,6 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    app.setStyleSheet(build_stylesheet(PALETTE))
-
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
