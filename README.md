@@ -8,7 +8,7 @@
 
 Works with Xprinter, TSC, Gprinter and other TSPL-compatible thermal label printers over USB or Serial (COM) — no extra drivers, no libusb.
 
-[![Download](https://img.shields.io/github/v/release/StaticBeaver/gapdetect?label=Download%20for%20Windows&style=for-the-badge)](https://github.com/StaticBeaver/gapdetect/releases/latest)
+[![Download](https://img.shields.io/github/v/release/StaticBeaver/GapDetect?label=Download%20for%20Windows&style=for-the-badge)](https://github.com/StaticBeaver/GapDetect/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows)
 ![Python](https://img.shields.io/badge/python-3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -36,7 +36,7 @@ GapDetect does it in one click and also reads back the label length and gap size
 
 ## Download
 
-Grab the latest `GapDetect.exe` from the **[Releases page](https://github.com/StaticBeaver/gapdetect/releases/latest)** — no installation needed, just run it.
+Grab the latest `GapDetect.exe` from the **[Releases page](https://github.com/StaticBeaver/GapDetect/releases/latest)** — no installation needed, just run it.
 
 > Windows SmartScreen may warn about an unknown publisher because the executable isn't code-signed. Click **More info → Run anyway**, or build it yourself from source (below).
 
@@ -53,8 +53,8 @@ Grab the latest `GapDetect.exe` from the **[Releases page](https://github.com/St
 Requirements: Windows, Python 3.8+
 
 ```bash
-git clone https://github.com/StaticBeaver/gapdetect.git
-cd gapdetect
+git clone https://github.com/StaticBeaver/GapDetect.git
+cd GapDetect
 pip install -r requirements.txt
 python main.py
 ```
