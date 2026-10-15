@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# PyInstaller build output (publish the .exe via GitHub Releases instead)
+build/
+dist/
+
+# Editor / AI tool settings
+.vscode/
+.idea/
+.claude/
+.agents/
+
+# Secrets
+.env
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
