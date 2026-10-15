@@ -95,15 +95,15 @@ def build_stylesheet(c):
             color: {c['fg_primary']};
             selection-background-color: {c['accent_container']};
             selection-color: {c['on_accent_container']};
-            border: 1px solid {c['bg_input']};
-            border-radius: 8px;
+            border: 1px solid {c['bg_input_hover']};
+            border-radius: 0px;
             padding: 4px;
             outline: none;
         }}
         QComboBox QAbstractItemView::item {{
-            padding: 10px 12px;
+            padding: 10px 14px;
             min-height: 34px;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 15px;
         }}
         QComboBox QAbstractItemView::item:hover {{
@@ -479,6 +479,7 @@ class MainWindow(QMainWindow):
 
         self.combo_devices = QComboBox()
         self.combo_devices.setObjectName("DeviceCombo")
+        _add_elevation(self.combo_devices.view(), blur=20, alpha=35, y_offset=4)
         self.combo_devices.currentIndexChanged.connect(self.on_device_selected)
 
         self.btn_refresh = _make_icon_button('fa5s.sync-alt', self.palette['fg_secondary'], size=34, icon_size=15)
@@ -500,6 +501,7 @@ class MainWindow(QMainWindow):
 
         self.lbl_dpi = QLabel("Resolution")
         self.combo_dpi = QComboBox()
+        _add_elevation(self.combo_dpi.view(), blur=20, alpha=35, y_offset=4)
         self.combo_dpi.addItem("203 DPI", 203)
         self.combo_dpi.addItem("300 DPI", 300)
         self.combo_dpi.addItem("600 DPI", 600)
