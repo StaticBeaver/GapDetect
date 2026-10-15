@@ -1,6 +1,6 @@
 import sys
 import re
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QDialog, QWidget, QVBoxLayout,
                              QHBoxLayout, QLabel, QComboBox, QPushButton,
                              QMessageBox, QSizePolicy,
                              QFrame, QDesktopWidget, QSizeGrip,
@@ -72,14 +72,14 @@ def _shade(hex_color, amount):
 def build_stylesheet(c):
     chevron_down = icons.icon_file('fa5s.chevron-down', c['fg_secondary'], 9)
     accent_hover, accent_pressed = _shade(c['accent'], -12), _shade(c['accent'], -24)
-    danger_hover, danger_pressed = _shade(c['danger'], 15), _shade(c['danger'], -20)
+    danger_pressed = _shade(c['danger'], -20)
     return f"""
         QWidget {{
             color: {c['fg_primary']};
             font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
             font-size: 14px;
         }}
-        QWidget#AppShell {{
+        QWidget#AppShell, QWidget#DialogShell {{
             background-color: {c['bg_window']};
             border: none;
             border-radius: 20px;
@@ -113,7 +113,7 @@ def build_stylesheet(c):
             selection-background-color: {c['accent_container']};
             selection-color: {c['on_accent_container']};
             border: 1px solid {c['bg_input']};
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 4px;
             outline: none;
         }}
@@ -128,12 +128,12 @@ def build_stylesheet(c):
         }}
 
         QComboBox#DeviceCombo {{
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 500;
             min-height: 40px;
         }}
         QComboBox#DeviceCombo QAbstractItemView::item {{
-            font-size: 16px;
+            font-size: 17px;
             min-height: 40px;
         }}
 
@@ -150,36 +150,38 @@ def build_stylesheet(c):
 
         QPushButton#IconBtn {{
             background-color: transparent;
-            border-radius: 16px;
+            border-radius: 17px;
         }}
         QPushButton#IconBtn:hover {{ background-color: {c['bg_input']}; }}
         QPushButton#IconBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
 
-        /* Modern round title bar buttons */
+        /* Solid Windows-style titlebar buttons (original look) */
         QPushButton#WinMinBtn {{
             background-color: transparent;
-            border-radius: 14px;
+            border-radius: 0px;
+            font-weight: 500;
+            font-size: 13px;
+            color: {c['fg_secondary']};
         }}
         QPushButton#WinMinBtn:hover {{ background-color: {c['bg_input']}; }}
         QPushButton#WinMinBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
 
         QPushButton#WinCloseBtn {{
             background-color: transparent;
-            border-radius: 14px;
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+            border-bottom-right-radius: 0px;
+            border-top-right-radius: 18px;
         }}
-        QPushButton#WinCloseBtn:hover {{
-            background-color: {c['danger_container']};
-        }}
-        QPushButton#WinCloseBtn:pressed {{
-            background-color: {c['danger']};
-        }}
+        QPushButton#WinCloseBtn:hover {{ background-color: {c['danger']}; }}
+        QPushButton#WinCloseBtn:pressed {{ background-color: {danger_pressed}; }}
 
         QPushButton#BtnPrimary {{
             background-color: {c['accent']};
             color: {c['bg_panel']};
             font-size: 16px;
-            font-weight: 600;
-            border-radius: 26px;
+            font-weight: 500;
+            border-radius: 28px;
         }}
         QPushButton#BtnPrimary:hover {{ background-color: {accent_hover}; }}
         QPushButton#BtnPrimary:pressed {{ background-color: {accent_pressed}; }}
@@ -189,36 +191,12 @@ def build_stylesheet(c):
             background-color: {c['accent_container']};
             color: {c['on_accent_container']};
             font-size: 16px;
-            font-weight: 600;
-            border-radius: 26px;
+            font-weight: 500;
+            border-radius: 28px;
         }}
         QPushButton#BtnSecondary:hover {{ background-color: {c['bg_input_hover']}; }}
         QPushButton#BtnSecondary:pressed {{ background-color: {c['bg_input']}; }}
         QPushButton#BtnSecondary:disabled {{ background-color: {c['bg_input']}; color: {c['fg_secondary']}; }}
-
-        /* Dialog styling */
-        QMessageBox {{
-            background-color: {c['bg_panel']};
-            border-radius: 14px;
-        }}
-        QMessageBox QLabel {{
-            color: {c['fg_primary']};
-            font-size: 13px;
-        }}
-        QMessageBox QPushButton {{
-            background-color: {c['accent']};
-            color: {c['bg_panel']};
-            border-radius: 8px;
-            padding: 8px 20px;
-            min-width: 70px;
-            font-weight: 600;
-        }}
-        QMessageBox QPushButton:hover {{
-            background-color: {accent_hover};
-        }}
-        QMessageBox QPushButton:pressed {{
-            background-color: {accent_pressed};
-        }}
     """
 
 
@@ -289,7 +267,7 @@ class DraggableArea(QFrame):
         self._drag_offset = None
 
 
-def _make_icon_button(name, color, size=32, icon_size=14, object_name="IconBtn"):
+def _make_icon_button(name, color, size=34, icon_size=15, object_name="IconBtn"):
     btn = QPushButton()
     btn.setObjectName(object_name)
     btn.setIcon(icons.icon(name, color))
@@ -299,13 +277,103 @@ def _make_icon_button(name, color, size=32, icon_size=14, object_name="IconBtn")
     return btn
 
 
-def _add_elevation(widget, blur=24, alpha=30, y_offset=4):
+def _add_elevation(widget, blur=32, alpha=45, y_offset=6):
     shadow = QGraphicsDropShadowEffect(widget)
     shadow.setBlurRadius(blur)
     shadow.setXOffset(0)
     shadow.setYOffset(y_offset)
     shadow.setColor(QColor(0, 0, 0, alpha))
     widget.setGraphicsEffect(shadow)
+
+
+# ═══════════════════════════════════════════════════════════════
+# CUSTOM FRAMELESS HELP DIALOG (No Windows Title Bar, Large Text)
+# ═══════════════════════════════════════════════════════════════
+class DpiHelpDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setModal(True)
+
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(16, 16, 16, 16)
+
+        shell = DraggableArea(self)
+        shell.setObjectName("DialogShell")
+        _add_elevation(shell, blur=36, alpha=60, y_offset=8)
+        outer_layout.addWidget(shell)
+
+        layout = QVBoxLayout(shell)
+        layout.setContentsMargins(24, 20, 24, 24)
+        layout.setSpacing(16)
+
+        # Dialog Header
+        top_row = QHBoxLayout()
+        icon_lbl = QLabel()
+        icon_lbl.setPixmap(icons.pixmap('fa5s.question-circle', PALETTE['accent'], 24))
+        top_row.addWidget(icon_lbl)
+
+        title_lbl = QLabel("Finding Your Printer's DPI")
+        title_lbl.setStyleSheet(f"font-size: 19px; font-weight: 700; color: {PALETTE['fg_title']};")
+        top_row.addWidget(title_lbl)
+        top_row.addStretch(1)
+
+        close_btn = QPushButton()
+        close_btn.setObjectName("IconBtn")
+        close_btn.setIcon(icons.icon('fa5s.times', PALETTE['fg_secondary']))
+        close_btn.setIconSize(QSize(14, 14))
+        close_btn.setFixedSize(32, 32)
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.clicked.connect(self.accept)
+        top_row.addWidget(close_btn)
+        layout.addLayout(top_row)
+
+        # Content Card with large, easily readable text
+        content_box = QFrame()
+        content_box.setObjectName("Panel")
+        content_box.setStyleSheet(f"background-color: {PALETTE['bg_panel']}; border-radius: 12px; padding: 10px;")
+        box_layout = QVBoxLayout(content_box)
+        box_layout.setSpacing(12)
+
+        desc_lbl = QLabel("You can easily check your label printer's resolution:")
+        desc_lbl.setStyleSheet(f"font-size: 15px; color: {PALETTE['fg_primary']}; font-weight: 500;")
+        box_layout.addWidget(desc_lbl)
+
+        item1 = QLabel("• <b>Device Label:</b> Usually printed on the bottom or back label of the printer.")
+        item1.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item1.setWordWrap(True)
+        box_layout.addWidget(item1)
+
+        item2 = QLabel("• <b>User Manual:</b> Listed under the technical specifications section.")
+        item2.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item2.setWordWrap(True)
+        box_layout.addWidget(item2)
+
+        item3 = QLabel("• <b>Online Search:</b> Search for <i>&quot;&lt;model&gt; dpi&quot;</i> (e.g. <i>Xprinter XP-DT325B dpi</i>).")
+        item3.setStyleSheet(f"font-size: 14px; color: {PALETTE['fg_secondary']}; line-height: 1.4;")
+        item3.setWordWrap(True)
+        box_layout.addWidget(item3)
+
+        tip_lbl = QLabel("💡 <b>Rule of Thumb:</b> Most budget and standard thermal label printers are <b>203 DPI</b>. If unsure, select 203 DPI.")
+        tip_lbl.setStyleSheet(f"font-size: 14px; color: {PALETTE['accent']}; background-color: {PALETTE['accent_container']}; border-radius: 8px; padding: 10px;")
+        tip_lbl.setWordWrap(True)
+        box_layout.addWidget(tip_lbl)
+
+        layout.addWidget(content_box)
+
+        # Bottom Got It Button
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        got_it_btn = QPushButton("Got it")
+        got_it_btn.setObjectName("BtnPrimary")
+        got_it_btn.setFixedSize(110, 42)
+        got_it_btn.setCursor(Qt.PointingHandCursor)
+        got_it_btn.clicked.connect(self.accept)
+        btn_row.addWidget(got_it_btn)
+        layout.addLayout(btn_row)
+
+        self.resize(440, 380)
 
 
 class MainWindow(QMainWindow):
@@ -330,42 +398,48 @@ class MainWindow(QMainWindow):
         outer_widget = QWidget()
         self.setCentralWidget(outer_widget)
         outer_layout = QVBoxLayout(outer_widget)
-        outer_layout.setContentsMargins(16, 16, 16, 16)
+        outer_layout.setContentsMargins(14, 14, 14, 14)
 
         shell = DraggableArea(self)
         shell.setObjectName("AppShell")
-        _add_elevation(shell, blur=36, alpha=45, y_offset=6)
+        _add_elevation(shell, blur=32, alpha=45, y_offset=6)
         outer_layout.addWidget(shell)
 
         main_layout = QVBoxLayout(shell)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
 
-        # --- Modern Header with rounded window controls ---
+        # --- Solid Clean Header (Original Style with no TR button) ---
         header = DraggableArea(self)
         header.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(18, 14, 16, 10)
-        header_layout.setSpacing(10)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(0)
+
+        header_left = QWidget()
+        header_left_layout = QHBoxLayout(header_left)
+        header_left_layout.setContentsMargins(24, 6, 8, 6)
+        header_left_layout.setSpacing(10)
 
         header_icon = QLabel()
-        header_icon.setPixmap(icons.logo_pixmap(24))
-        header_layout.addWidget(header_icon)
+        header_icon.setPixmap(icons.logo_pixmap(22))
+        header_left_layout.addWidget(header_icon)
 
         self.lbl_header_title = QLabel("GapDetect")
         self.lbl_header_title.setStyleSheet(
-            f"font-size: 17px; font-weight: 700; color: {PALETTE['fg_title']}; letter-spacing: -0.3px;"
+            f"font-size: 18px; font-weight: 600; color: {PALETTE['fg_title']}; background: transparent;"
         )
-        header_layout.addWidget(self.lbl_header_title)
+        header_left_layout.addWidget(self.lbl_header_title)
 
+        header_layout.addWidget(header_left, 0, Qt.AlignVCenter)
         header_layout.addStretch(1)
 
-        # Elegant rounded minimize & close buttons
+        # Full-height Windows style minimize & close buttons
         self.btn_minimize = QPushButton()
         self.btn_minimize.setObjectName("WinMinBtn")
-        self.btn_minimize.setIcon(icons.icon('fa5s.minus', PALETTE['fg_secondary']))
-        self.btn_minimize.setIconSize(QSize(11, 11))
-        self.btn_minimize.setFixedSize(28, 28)
+        self.btn_minimize.setIcon(icons.icon('fa5s.window-minimize', PALETTE['fg_secondary']))
+        self.btn_minimize.setIconSize(QSize(13, 13))
+        self.btn_minimize.setFixedSize(44, 44)
         self.btn_minimize.setCursor(Qt.PointingHandCursor)
         self.btn_minimize.setToolTip("Minimize")
         self.btn_minimize.clicked.connect(self.showMinimized)
@@ -373,8 +447,8 @@ class MainWindow(QMainWindow):
         self.btn_close = QPushButton()
         self.btn_close.setObjectName("WinCloseBtn")
         self.btn_close.setIcon(icons.icon('fa5s.times', PALETTE['fg_secondary']))
-        self.btn_close.setIconSize(QSize(12, 12))
-        self.btn_close.setFixedSize(28, 28)
+        self.btn_close.setIconSize(QSize(14, 14))
+        self.btn_close.setFixedSize(44, 44)
         self.btn_close.setCursor(Qt.PointingHandCursor)
         self.btn_close.setToolTip("Close")
         self.btn_close.clicked.connect(self.close)
@@ -382,7 +456,7 @@ class MainWindow(QMainWindow):
         win_btns = QWidget()
         win_btns_layout = QHBoxLayout(win_btns)
         win_btns_layout.setContentsMargins(0, 0, 0, 0)
-        win_btns_layout.setSpacing(6)
+        win_btns_layout.setSpacing(0)
         win_btns_layout.addWidget(self.btn_minimize)
         win_btns_layout.addWidget(self.btn_close)
         header_layout.addWidget(win_btns, 0, Qt.AlignVCenter)
@@ -393,26 +467,26 @@ class MainWindow(QMainWindow):
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
         content_layout.setSpacing(12)
-        content_layout.setContentsMargins(18, 4, 18, 16)
+        content_layout.setContentsMargins(24, 6, 24, 8)
         main_layout.addWidget(content_widget)
 
-        # --- Device & Settings Panel ---
+        # --- Device & Resolution Panel ---
         control_panel = QFrame()
         control_panel.setObjectName("Panel")
-        _add_elevation(control_panel, blur=18, alpha=20, y_offset=2)
+        _add_elevation(control_panel)
         control_layout = QVBoxLayout(control_panel)
-        control_layout.setContentsMargins(16, 2, 12, 2)
+        control_layout.setContentsMargins(18, 0, 12, 0)
         control_layout.setSpacing(0)
 
         device_row_layout = QHBoxLayout()
-        device_row_layout.setContentsMargins(0, 8, 0, 8)
+        device_row_layout.setContentsMargins(0, 10, 0, 10)
         device_row_layout.setSpacing(8)
 
         self.combo_devices = QComboBox()
         self.combo_devices.setObjectName("DeviceCombo")
         self.combo_devices.currentIndexChanged.connect(self.on_device_selected)
 
-        self.btn_refresh = _make_icon_button('fa5s.sync-alt', PALETTE['fg_secondary'], size=32, icon_size=13)
+        self.btn_refresh = _make_icon_button('fa5s.sync-alt', PALETTE['fg_secondary'], size=34, icon_size=15)
         self.btn_refresh.setToolTip("Refresh Devices")
         self.btn_refresh.clicked.connect(self.update_device_list)
 
@@ -426,11 +500,10 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(divider)
 
         meta_row_layout = QHBoxLayout()
-        meta_row_layout.setContentsMargins(0, 8, 0, 8)
+        meta_row_layout.setContentsMargins(0, 10, 0, 10)
         meta_row_layout.setSpacing(8)
 
         self.lbl_dpi = QLabel("Resolution")
-        self.lbl_dpi.setStyleSheet(f"color: {PALETTE['fg_secondary']}; font-size: 13px; font-weight: 500;")
         self.combo_dpi = QComboBox()
         self.combo_dpi.addItem("203 DPI", 203)
         self.combo_dpi.addItem("300 DPI", 300)
@@ -440,13 +513,13 @@ class MainWindow(QMainWindow):
         self.combo_dpi.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_dpi.currentIndexChanged.connect(self.on_dpi_changed)
 
-        self.btn_dpi_help = _make_icon_button('fa5s.question-circle', PALETTE['fg_secondary'], size=30, icon_size=13)
-        self.btn_dpi_help.setToolTip("How to find your printer's DPI?")
+        self.btn_dpi_help = _make_icon_button('fa5s.question-circle', PALETTE['fg_secondary'], size=34, icon_size=15)
+        self.btn_dpi_help.setToolTip("How do I find my printer's DPI?")
         self.btn_dpi_help.clicked.connect(self.show_dpi_help)
 
         self.status_dot = QLabel()
         self.lbl_status = QLabel("Waiting")
-        self.lbl_status.setFont(QFont("Segoe UI", 10))
+        self.lbl_status.setFont(QFont("Segoe UI", 11))
 
         meta_row_layout.addWidget(self.lbl_dpi)
         meta_row_layout.addWidget(self.combo_dpi)
@@ -465,7 +538,7 @@ class MainWindow(QMainWindow):
         self.btn_calibrate = QPushButton("Calibrate")
         self.btn_calibrate.setObjectName("BtnPrimary")
         self.btn_calibrate.setIcon(icons.icon('fa5s.ruler-combined', PALETTE['bg_panel']))
-        self.btn_calibrate.setMinimumHeight(52)
+        self.btn_calibrate.setMinimumHeight(56)
         self.btn_calibrate.clicked.connect(self.do_calibrate)
         self.btn_calibrate.setEnabled(False)
         self.btn_calibrate.setCursor(Qt.PointingHandCursor)
@@ -473,7 +546,7 @@ class MainWindow(QMainWindow):
         self.btn_send_cmd = QPushButton("Get Info")
         self.btn_send_cmd.setObjectName("BtnSecondary")
         self.btn_send_cmd.setIcon(icons.icon('fa5s.download', PALETTE['on_accent_container']))
-        self.btn_send_cmd.setMinimumHeight(52)
+        self.btn_send_cmd.setMinimumHeight(56)
         self.btn_send_cmd.clicked.connect(self.send_and_read)
         self.btn_send_cmd.setEnabled(False)
         self.btn_send_cmd.setCursor(Qt.PointingHandCursor)
@@ -488,29 +561,29 @@ class MainWindow(QMainWindow):
 
         length_tile = QFrame()
         length_tile.setObjectName("ResultTile")
-        _add_elevation(length_tile, blur=18, alpha=20, y_offset=2)
+        _add_elevation(length_tile)
         length_tile_layout = QVBoxLayout(length_tile)
-        length_tile_layout.setContentsMargins(18, 14, 18, 14)
-        length_tile_layout.setSpacing(4)
+        length_tile_layout.setContentsMargins(18, 16, 18, 16)
+        length_tile_layout.setSpacing(6)
         self.lbl_length_title = QLabel("Label Length")
         self.lbl_length_title.setStyleSheet(f"color: {PALETTE['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
         self.lbl_length = QLabel("—")
         self.lbl_length.setWordWrap(True)
-        self.lbl_length.setStyleSheet(f"font-weight: 700; font-size: 26px; color: {PALETTE['fg_primary']}; border: none;")
+        self.lbl_length.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {PALETTE['fg_primary']}; border: none;")
         length_tile_layout.addWidget(self.lbl_length_title)
         length_tile_layout.addWidget(self.lbl_length)
 
         gap_tile = QFrame()
         gap_tile.setObjectName("ResultTile")
-        _add_elevation(gap_tile, blur=18, alpha=20, y_offset=2)
+        _add_elevation(gap_tile)
         gap_tile_layout = QVBoxLayout(gap_tile)
-        gap_tile_layout.setContentsMargins(18, 14, 18, 14)
-        gap_tile_layout.setSpacing(4)
+        gap_tile_layout.setContentsMargins(18, 16, 18, 16)
+        gap_tile_layout.setSpacing(6)
         self.lbl_gap_title = QLabel("Gap")
         self.lbl_gap_title.setStyleSheet(f"color: {PALETTE['fg_secondary']}; font-size: 13px; font-weight: 500; border: none;")
         self.lbl_gap = QLabel("—")
         self.lbl_gap.setWordWrap(True)
-        self.lbl_gap.setStyleSheet(f"font-weight: 700; font-size: 26px; color: {PALETTE['fg_primary']}; border: none;")
+        self.lbl_gap.setStyleSheet(f"font-weight: 600; font-size: 27px; color: {PALETTE['fg_primary']}; border: none;")
         gap_tile_layout.addWidget(self.lbl_gap_title)
         gap_tile_layout.addWidget(self.lbl_gap)
 
@@ -523,14 +596,14 @@ class MainWindow(QMainWindow):
         self.lbl_footer = QLabel("Developed by Static Beaver © 2026")
         self.lbl_footer.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.lbl_footer.setFont(QFont("Segoe UI", 9))
-        self.lbl_footer.setStyleSheet(f"color: {PALETTE['fg_secondary']}; padding-top: 4px;")
+        self.lbl_footer.setStyleSheet(f"color: {PALETTE['fg_secondary']};")
         footer_layout.addWidget(self.lbl_footer, stretch=1)
         content_layout.addLayout(footer_layout)
 
         # Size grip
         self._shell = shell
         self.size_grip = QSizeGrip(shell)
-        self.size_grip.setFixedSize(14, 14)
+        self.size_grip.setFixedSize(16, 16)
         self.size_grip.raise_()
 
         self._set_status("waiting")
@@ -538,7 +611,7 @@ class MainWindow(QMainWindow):
 
         min_size = outer_widget.minimumSizeHint()
         self.setMinimumSize(min_size)
-        self.resize(max(400, min_size.width()), min_size.height())
+        self.resize(max(420, min_size.width()), min_size.height())
         self._center_on_screen()
         self._position_size_grip()
 
@@ -560,15 +633,8 @@ class MainWindow(QMainWindow):
         self.settings.setValue("dpi", self.combo_dpi.currentData())
 
     def show_dpi_help(self):
-        title = "How do I find my printer's DPI?"
-        text = (
-            "You can find your printer's DPI value through:\n\n"
-            "• Printer label on the bottom/back of the device.\n"
-            "• User manual specifications section.\n"
-            "• Searching online for \"<model> dpi\" (e.g. \"Xprinter XP-DT325B dpi\").\n\n"
-            "Tip: Most standard label printers are 203 DPI. If unsure, start with 203 DPI."
-        )
-        QMessageBox.information(self, title, text)
+        dlg = DpiHelpDialog(self)
+        dlg.exec_()
 
     def _set_status(self, state):
         self.current_status_state = state
