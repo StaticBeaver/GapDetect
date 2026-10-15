@@ -41,20 +41,19 @@ LIGHT_PALETTE = {
 }
 
 DARK_PALETTE = {
-    "bg_window": "#0d111a",
-    "bg_panel": "rgba(22, 29, 46, 0.75)",
-    "bg_panel_border": "rgba(255, 255, 255, 0.08)",
-    "bg_input": "rgba(255, 255, 255, 0.05)",
-    "bg_input_hover": "rgba(255, 255, 255, 0.09)",
-    "fg_primary": "#f0f4f9",
-    "fg_secondary": "#8b9bb4",
-    "fg_title": "#ffffff",
-    "accent": "#0a84ff",
-    "accent_container": "rgba(10, 132, 255, 0.16)",
-    "on_accent_container": "#64d2ff",
-    "success": "#30d158",
-    "danger": "#ff453a",
-    "danger_container": "rgba(255, 69, 58, 0.18)",
+    "bg_window": "#131417",
+    "bg_panel": "#1e2024",
+    "bg_input": "#2a2d32",
+    "bg_input_hover": "#34373d",
+    "fg_primary": "#e8eaed",
+    "fg_secondary": "#9aa0a6",
+    "fg_title": "#e8eaed",
+    "accent": "#8ab4f8",
+    "accent_container": "#2c3a50",
+    "on_accent_container": "#adc7f7",
+    "success": "#81c995",
+    "danger": "#f28b82",
+    "danger_container": "#4c2523",
 }
 
 IS_DARK = _detect_system_dark_mode()
@@ -62,8 +61,6 @@ PALETTE = DARK_PALETTE if IS_DARK else LIGHT_PALETTE
 
 
 def _shade(hex_color, amount):
-    if hex_color.startswith('rgba'):
-        return hex_color
     hex_color = hex_color.lstrip('#')
     r, g, b = (int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
     r = max(0, min(255, r + amount))
@@ -74,22 +71,18 @@ def _shade(hex_color, amount):
 
 def build_stylesheet(c):
     chevron_down = icons.icon_file('fa5s.chevron-down', c['fg_secondary'], 9)
-    accent_hover = _shade(c['accent'], 15) if not c['accent'].startswith('rgba') else c['accent']
-    accent_pressed = _shade(c['accent'], -20) if not c['accent'].startswith('rgba') else c['accent']
-    
-    panel_bg = c['bg_panel']
-    panel_border = c.get('bg_panel_border', 'none')
-    
+    accent_hover, accent_pressed = _shade(c['accent'], -12), _shade(c['accent'], -24)
+    danger_pressed = _shade(c['danger'], -20)
     return f"""
         QWidget {{
             color: {c['fg_primary']};
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Google Sans', 'Segoe UI', Arial, sans-serif;
             font-size: 14px;
         }}
         QWidget#AppShell, QWidget#DialogShell {{
             background-color: {c['bg_window']};
-            border: 1px solid {panel_border};
-            border-radius: 24px;
+            border: none;
+            border-radius: 20px;
         }}
         QLabel {{ color: {c['fg_primary']}; background: transparent; }}
         QLabel#SectionCaption {{
@@ -99,34 +92,29 @@ def build_stylesheet(c):
         }}
 
         QFrame#Panel, QFrame#ResultTile {{
-            background-color: {panel_bg};
-            border: 1px solid {panel_border};
-            border-radius: 18px;
+            background-color: {c['bg_panel']};
+            border: none;
+            border-radius: 16px;
         }}
 
         QComboBox {{
-            background: {c['bg_input']};
-            border: 1px solid {panel_border};
-            border-radius: 10px;
-            padding: 8px 10px;
+            background: transparent;
+            border: none;
+            padding: 8px 6px;
             min-height: 36px;
             color: {c['fg_primary']};
             font-size: 15px;
         }}
-        QComboBox:hover {{
-            background: {c['bg_input_hover']};
-            border: 1px solid rgba(10, 132, 255, 0.4);
-        }}
         QComboBox::drop-down {{ border: none; width: 26px; }}
         QComboBox::down-arrow {{ image: url({chevron_down}); width: 12px; height: 12px; }}
         QComboBox QAbstractItemView {{
-            background-color: #121826;
+            background-color: {c['bg_panel']};
             color: {c['fg_primary']};
             selection-background-color: {c['accent_container']};
             selection-color: {c['on_accent_container']};
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            padding: 6px;
+            border: 1px solid {c['bg_input']};
+            border-radius: 8px;
+            padding: 4px;
             outline: none;
         }}
         QComboBox QAbstractItemView::item {{
@@ -136,17 +124,21 @@ def build_stylesheet(c):
             font-size: 15px;
         }}
         QComboBox QAbstractItemView::item:hover {{
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: {c['bg_input']};
         }}
 
         QComboBox#DeviceCombo {{
+            font-size: 18px;
+            font-weight: 500;
+            min-height: 40px;
+        }}
+        QComboBox#DeviceCombo QAbstractItemView::item {{
             font-size: 17px;
-            font-weight: 600;
-            min-height: 42px;
+            min-height: 40px;
         }}
 
         QFrame#Divider {{
-            background-color: {panel_border};
+            background-color: {c['bg_input']};
             border: none;
         }}
 
@@ -157,15 +149,11 @@ def build_stylesheet(c):
         }}
 
         QPushButton#IconBtn {{
-            background-color: {c['bg_input']};
-            border: 1px solid {panel_border};
-            border-radius: 16px;
+            background-color: transparent;
+            border-radius: 17px;
         }}
-        QPushButton#IconBtn:hover {{ 
-            background-color: {c['bg_input_hover']};
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }}
-        QPushButton#IconBtn:pressed {{ background-color: rgba(255, 255, 255, 0.15); }}
+        QPushButton#IconBtn:hover {{ background-color: {c['bg_input']}; }}
+        QPushButton#IconBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
 
         /* Exact Windows 11 Titlebar Button Styling */
         QPushButton#WinMinBtn {{
@@ -173,10 +161,10 @@ def build_stylesheet(c):
             border-radius: 0px;
         }}
         QPushButton#WinMinBtn:hover {{
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: {("rgba(255, 255, 255, 0.08)" if IS_DARK else "rgba(0, 0, 0, 0.06)")};
         }}
         QPushButton#WinMinBtn:pressed {{
-            background-color: rgba(255, 255, 255, 0.15);
+            background-color: {("rgba(255, 255, 255, 0.15)" if IS_DARK else "rgba(0, 0, 0, 0.12)")};
         }}
 
         QPushButton#WinCloseBtn {{
@@ -184,7 +172,7 @@ def build_stylesheet(c):
             border-top-left-radius: 0px;
             border-bottom-left-radius: 0px;
             border-bottom-right-radius: 0px;
-            border-top-right-radius: 20px;
+            border-top-right-radius: 18px;
         }}
         QPushButton#WinCloseBtn:hover {{
             background-color: #e81123;
@@ -193,48 +181,27 @@ def build_stylesheet(c):
             background-color: #c4101f;
         }}
 
-        /* Modern iOS style action buttons */
         QPushButton#BtnPrimary {{
             background-color: {c['accent']};
-            color: #ffffff;
+            color: {c['bg_panel']};
             font-size: 16px;
-            font-weight: 600;
-            border-radius: 26px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 500;
+            border-radius: 28px;
         }}
-        QPushButton#BtnPrimary:hover {{
-            background-color: #1a8cff;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-        }}
-        QPushButton#BtnPrimary:pressed {{
-            background-color: #0070e0;
-        }}
-        QPushButton#BtnPrimary:disabled {{
-            background-color: rgba(255, 255, 255, 0.04);
-            color: {c['fg_secondary']};
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }}
+        QPushButton#BtnPrimary:hover {{ background-color: {accent_hover}; }}
+        QPushButton#BtnPrimary:pressed {{ background-color: {accent_pressed}; }}
+        QPushButton#BtnPrimary:disabled {{ background-color: {c['bg_input']}; color: {c['fg_secondary']}; }}
 
         QPushButton#BtnSecondary {{
             background-color: {c['accent_container']};
             color: {c['on_accent_container']};
             font-size: 16px;
-            font-weight: 600;
-            border-radius: 26px;
-            border: 1px solid rgba(10, 132, 255, 0.3);
+            font-weight: 500;
+            border-radius: 28px;
         }}
-        QPushButton#BtnSecondary:hover {{
-            background-color: rgba(10, 132, 255, 0.24);
-            border: 1px solid rgba(10, 132, 255, 0.5);
-        }}
-        QPushButton#BtnSecondary:pressed {{
-            background-color: rgba(10, 132, 255, 0.32);
-        }}
-        QPushButton#BtnSecondary:disabled {{
-            background-color: rgba(255, 255, 255, 0.04);
-            color: {c['fg_secondary']};
-            border: 1px solid rgba(255, 255, 255, 0.04);
-        }}
+        QPushButton#BtnSecondary:hover {{ background-color: {c['bg_input_hover']}; }}
+        QPushButton#BtnSecondary:pressed {{ background-color: {c['bg_input']}; }}
+        QPushButton#BtnSecondary:disabled {{ background-color: {c['bg_input']}; color: {c['fg_secondary']}; }}
     """
 
 
@@ -585,7 +552,7 @@ class MainWindow(QMainWindow):
 
         self.btn_calibrate = QPushButton("Calibrate")
         self.btn_calibrate.setObjectName("BtnPrimary")
-        self.btn_calibrate.setIcon(icons.icon('fa5s.ruler-combined', '#ffffff'))
+        self.btn_calibrate.setIcon(icons.icon('fa5s.ruler-combined', PALETTE['bg_panel']))
         self.btn_calibrate.setMinimumHeight(56)
         self.btn_calibrate.clicked.connect(self.do_calibrate)
         self.btn_calibrate.setEnabled(False)
