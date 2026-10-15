@@ -608,7 +608,7 @@ class MainWindow(QMainWindow):
 
         # --- Footer ---
         footer_layout = QHBoxLayout()
-        self.lbl_footer = QLabel("Developed by Static Beaver © 2026")
+        self.lbl_footer = QLabel("Developed by StaticBeaver © 2026")
         self.lbl_footer.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.lbl_footer.setFont(QFont("Segoe UI", 9))
         self.lbl_footer.setStyleSheet(f"color: {PALETTE['fg_secondary']};")

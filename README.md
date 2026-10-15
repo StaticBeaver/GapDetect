@@ -98,4 +98,4 @@ Bug reports, printer compatibility reports and pull requests are welcome. Please
 
 ## License
 
-[MIT](LICENSE) © 2026 Static Beaver
+[MIT](LICENSE) © 2026 StaticBeaver
