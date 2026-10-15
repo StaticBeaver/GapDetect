@@ -155,16 +155,17 @@ def build_stylesheet(c):
         QPushButton#IconBtn:hover {{ background-color: {c['bg_input']}; }}
         QPushButton#IconBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
 
-        /* Solid Windows-style titlebar buttons (original look) */
+        /* Exact Windows 11 Titlebar Button Styling */
         QPushButton#WinMinBtn {{
             background-color: transparent;
             border-radius: 0px;
-            font-weight: 500;
-            font-size: 13px;
-            color: {c['fg_secondary']};
         }}
-        QPushButton#WinMinBtn:hover {{ background-color: {c['bg_input']}; }}
-        QPushButton#WinMinBtn:pressed {{ background-color: {c['bg_input_hover']}; }}
+        QPushButton#WinMinBtn:hover {{
+            background-color: {("rgba(255, 255, 255, 0.08)" if IS_DARK else "rgba(0, 0, 0, 0.06)")};
+        }}
+        QPushButton#WinMinBtn:pressed {{
+            background-color: {("rgba(255, 255, 255, 0.15)" if IS_DARK else "rgba(0, 0, 0, 0.12)")};
+        }}
 
         QPushButton#WinCloseBtn {{
             background-color: transparent;
@@ -173,8 +174,12 @@ def build_stylesheet(c):
             border-bottom-right-radius: 0px;
             border-top-right-radius: 18px;
         }}
-        QPushButton#WinCloseBtn:hover {{ background-color: {c['danger']}; }}
-        QPushButton#WinCloseBtn:pressed {{ background-color: {danger_pressed}; }}
+        QPushButton#WinCloseBtn:hover {{
+            background-color: #e81123;
+        }}
+        QPushButton#WinCloseBtn:pressed {{
+            background-color: #c4101f;
+        }}
 
         QPushButton#BtnPrimary {{
             background-color: {c['accent']};
@@ -437,21 +442,31 @@ class MainWindow(QMainWindow):
         # Full-height Windows style minimize & close buttons
         self.btn_minimize = QPushButton()
         self.btn_minimize.setObjectName("WinMinBtn")
-        self.btn_minimize.setIcon(icons.icon('fa5s.window-minimize', PALETTE['fg_secondary']))
+        self._icon_min_normal = icons.icon('fa5s.window-minimize', PALETTE['fg_secondary'])
+        self._icon_min_hover = icons.icon('fa5s.window-minimize', PALETTE['fg_primary'])
+        self.btn_minimize.setIcon(self._icon_min_normal)
         self.btn_minimize.setIconSize(QSize(13, 13))
         self.btn_minimize.setFixedSize(44, 44)
         self.btn_minimize.setCursor(Qt.PointingHandCursor)
         self.btn_minimize.setToolTip("Minimize")
         self.btn_minimize.clicked.connect(self.showMinimized)
+        self.btn_minimize.enterEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_hover)
+        self.btn_minimize.leaveEvent = lambda e: self.btn_minimize.setIcon(self._icon_min_normal)
 
         self.btn_close = QPushButton()
         self.btn_close.setObjectName("WinCloseBtn")
-        self.btn_close.setIcon(icons.icon('fa5s.times', PALETTE['fg_secondary']))
+        self._icon_close_normal = icons.icon('fa5s.times', PALETTE['fg_secondary'])
+        self._icon_close_hover = icons.icon('fa5s.times', '#ffffff')
+        self.btn_close.setIcon(self._icon_close_normal)
         self.btn_close.setIconSize(QSize(14, 14))
         self.btn_close.setFixedSize(44, 44)
         self.btn_close.setCursor(Qt.PointingHandCursor)
         self.btn_close.setToolTip("Close")
         self.btn_close.clicked.connect(self.close)
+
+        # Exact Windows hover effect: switch icon to white on hover
+        self.btn_close.enterEvent = lambda e: self.btn_close.setIcon(self._icon_close_hover)
+        self.btn_close.leaveEvent = lambda e: self.btn_close.setIcon(self._icon_close_normal)
 
         win_btns = QWidget()
         win_btns_layout = QHBoxLayout(win_btns)
