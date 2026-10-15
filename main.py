@@ -213,6 +213,28 @@ def build_stylesheet(c):
             background-color: {c['accent']};
             border-radius: 2px;
         }}
+
+        QMessageBox {{
+            background-color: {c['bg_panel']};
+        }}
+        QMessageBox QLabel {{
+            color: {c['fg_primary']};
+            font-size: 13px;
+        }}
+        QMessageBox QPushButton {{
+            background-color: {c['accent']};
+            color: {c['bg_panel']};
+            border-radius: 8px;
+            padding: 6px 18px;
+            min-width: 60px;
+            font-weight: 500;
+        }}
+        QMessageBox QPushButton:hover {{
+            background-color: {accent_hover};
+        }}
+        QMessageBox QPushButton:pressed {{
+            background-color: {accent_pressed};
+        }}
     """
 
 
